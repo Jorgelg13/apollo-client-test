@@ -1,12 +1,61 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import React from "react";
+import { render } from "react-dom";
+import "./index.css";
+import App from "./App";
+import ApolloClient, { gql } from "apollo-boost";
 
-ReactDOM.render(<App />, document.getElementById('root'));
+const client = new ApolloClient({
+  uri: "http://localhost:3000/graphql-beta"
+});
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+const shopId = 'cmVhY3Rpb24vc2hvcDpKOEJocTN1VHRkZ3daeDNyeg==';
+
+const query = gql`
+  query catalogItemsQuery($shopId: ID!, $first: ConnectionLimitInt, $last:  ConnectionLimitInt, $before: ConnectionCursor, $after: ConnectionCursor, $sortBy: CatalogItemSortByField, $sortByPriceCurrencyCode: String, $sortOrder: SortOrder) {
+    catalogItems(shopIds: [$shopId], first: $first, last: $last, before: $before, after: $after, sortBy: $sortBy, sortByPriceCurrencyCode: $sortByPriceCurrencyCode, sortOrder: $sortOrder) {
+      totalCount
+      pageInfo {
+        endCursor
+        startCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          _id
+          ... on CatalogItemProduct {
+            product {
+              _id
+              title
+              slug
+              description
+              vendor
+              pricing {
+                compareAtPrice {
+                  displayAmount
+                }
+                displayPrice
+              }
+              primaryImage {
+                URLs {
+                  small
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+client.query({
+  query: query,
+  variables: {
+    shopId: shopId
+  }
+})
+.then(res => console.log(res));
+
+render(<App />, document.getElementById("root"));
